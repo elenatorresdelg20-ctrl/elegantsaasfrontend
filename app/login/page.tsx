@@ -8,21 +8,31 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ParrotMascot } from "@/components/parrot-mascot"
+import { login as apiLogin } from "@/lib/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Simular login
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsLoading(false)
-    router.push("/")
+    setError(null)
+
+    try {
+      await apiLogin(email, password)
+      router.push("/")
+    } catch (err) {
+      console.error(err)
+      const message = err instanceof Error ? err.message : "No se pudo iniciar sesión"
+      setError(message)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -135,6 +145,8 @@ export default function LoginPage() {
                 </div>
               </div>
             </div>
+
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
             <Button type="submit" className="h-12 w-full text-base font-semibold" disabled={isLoading}>
               {isLoading ? (

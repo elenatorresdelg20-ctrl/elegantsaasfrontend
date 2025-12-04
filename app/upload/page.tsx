@@ -48,6 +48,7 @@ import {
 } from "recharts"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { uploadDataset } from "@/lib/api"
 
 interface ColumnInfo {
   name: string
@@ -69,7 +70,7 @@ interface KPI {
   label: string
   value: string
   change?: number
-  icon: React.ReactNode
+  icon?: React.ReactNode
 }
 
 interface ProcessedData {
@@ -120,170 +121,26 @@ export default function UploadPage() {
     }
   }, [])
 
-  const detectColumnType = (values: any[]): "date" | "number" | "text" => {
-    const sample = values.filter((v) => v !== null && v !== undefined && v !== "").slice(0, 10)
-    if (sample.length === 0) return "text"
 
-    const datePatterns = [/^\d{4}-\d{2}-\d{2}/, /^\d{2}\/\d{2}\/\d{4}/, /^\d{2}-\d{2}-\d{4}/]
-    const isDate = sample.every((v) => {
-      const str = String(v)
-      return datePatterns.some((p) => p.test(str)) || !isNaN(Date.parse(str))
-    })
-    if (isDate) return "date"
-
-    const isNumber = sample.every((v) => !isNaN(Number(v)) && typeof v !== "boolean")
-    if (isNumber) return "number"
-
-    return "text"
-  }
-
-  const processExcelFile = async (file: File) => {
-    setUploadStatus("processing")
+  const processFileWithApi = async (selectedFile: File) => {
+    setUploadStatus("uploading")
 
     try {
-      const XLSX = await import("xlsx")
-      const arrayBuffer = await file.arrayBuffer()
-      const workbook = XLSX.read(arrayBuffer, { type: "array" })
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      const jsonData = XLSX.utils.sheet_to_json(worksheet)
+      const response = await uploadDataset(selectedFile)
+      const kpis: KPI[] = response.kpis.map((kpi) => ({ label: kpi.label, value: kpi.value, change: kpi.change }))
 
-      if (jsonData.length === 0) {
-        setUploadStatus("error")
-        return
-      }
-
-      const columnNames = Object.keys(jsonData[0] as object)
-      const columns: ColumnInfo[] = columnNames.map((name) => {
-        const values = jsonData.map((row: any) => row[name])
-        const type = detectColumnType(values)
-        return { name, type, sample: values[0] }
-      })
-
-      const vendedorCol = columnNames.find((c) => c.toLowerCase().includes("vendedor"))
-      const clienteCol = columnNames.find((c) => c.toLowerCase().includes("cliente"))
-      const tiendaCol = columnNames.find(
-        (c) => c.toLowerCase().includes("tienda") || c.toLowerCase().includes("sucursal"),
-      )
-
-      const vendedores = vendedorCol
-        ? ([...new Set(jsonData.map((row: any) => row[vendedorCol]).filter(Boolean))] as string[])
-        : []
-      const clientes = clienteCol
-        ? ([...new Set(jsonData.map((row: any) => row[clienteCol]).filter(Boolean))] as string[])
-        : []
-      const tiendas = tiendaCol
-        ? ([...new Set(jsonData.map((row: any) => row[tiendaCol]).filter(Boolean))] as string[])
-        : []
-
-      const charts: GeneratedChart[] = []
-      const dateCol = columns.find((c) => c.type === "date")
-      const numericCols = columns.filter((c) => c.type === "number")
-      const textCols = columns.filter((c) => c.type === "text")
-
-      if (dateCol && numericCols.length > 0) {
-        const numCol = numericCols[0]
-        const aggregatedData = jsonData.reduce((acc: any, row: any) => {
-          const dateKey = String(row[dateCol.name]).split("T")[0]
-          if (!acc[dateKey]) acc[dateKey] = { date: dateKey, value: 0, count: 0 }
-          acc[dateKey].value += Number(row[numCol.name]) || 0
-          acc[dateKey].count++
-          return acc
-        }, {})
-
-        const chartData = Object.values(aggregatedData)
-          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          .slice(-30)
-
-        charts.push({
-          id: "trend-line",
-          type: "line",
-          title: `Tendencia de ${numCol.name}`,
-          data: chartData,
-          xKey: "date",
-          yKey: "value",
-          description: "Evolución temporal de los datos",
-        })
-
-        charts.push({
-          id: "trend-area",
-          type: "area",
-          title: `Área de ${numCol.name}`,
-          data: chartData,
-          xKey: "date",
-          yKey: "value",
-          description: "Visualización de área acumulada",
-        })
-      }
-
-      if (textCols.length > 0 && numericCols.length > 0) {
-        const textCol = textCols[0]
-        const numCol = numericCols[0]
-
-        const aggregated = jsonData.reduce((acc: any, row: any) => {
-          const key = String(row[textCol.name] || "Sin categoría")
-          if (!acc[key]) acc[key] = { category: key, value: 0 }
-          acc[key].value += Number(row[numCol.name]) || 0
-          return acc
-        }, {})
-
-        const barData = Object.values(aggregated)
-          .sort((a: any, b: any) => b.value - a.value)
-          .slice(0, 10)
-
-        charts.push({
-          id: "category-bar",
-          type: "bar",
-          title: `${numCol.name} por ${textCol.name}`,
-          data: barData,
-          xKey: "category",
-          yKey: "value",
-          description: "Distribución por categoría",
-        })
-
-        charts.push({
-          id: "category-pie",
-          type: "pie",
-          title: `Distribución de ${textCol.name}`,
-          data: barData.slice(0, 6),
-          xKey: "category",
-          yKey: "value",
-          description: "Participación porcentual",
-        })
-      }
-
-      const kpis: KPI[] = []
-      numericCols.slice(0, 4).forEach((col) => {
-        const values = jsonData.map((row: any) => Number(row[col.name]) || 0)
-        const total = values.reduce((a, b) => a + b, 0)
-        const avg = total / values.length
-
-        kpis.push({
-          label: `Total ${col.name}`,
-          value: total.toLocaleString("es-MX", { maximumFractionDigits: 0 }),
-          change: Math.random() * 20 - 5,
-          icon: <TrendingUp className="h-5 w-5" />,
-        })
-      })
-
-      if (kpis.length === 0) {
-        kpis.push({
-          label: "Total Registros",
-          value: jsonData.length.toLocaleString(),
-          icon: <FileSpreadsheet className="h-5 w-5" />,
-        })
-      }
-
-      setProcessedData({
-        columns,
-        charts,
+      const mappedData: ProcessedData = {
+        columns: response.columns,
+        charts: response.charts,
         kpis,
-        rawData: jsonData,
-        rowCount: jsonData.length,
-        vendedores,
-        clientes,
-        tiendas,
-      })
+        rawData: response.rawData,
+        rowCount: response.rowCount,
+        vendedores: response.vendedores,
+        clientes: response.clientes,
+        tiendas: response.tiendas,
+      }
+
+      setProcessedData(mappedData)
       setUploadStatus("success")
     } catch (error) {
       console.error("Error processing file:", error)
@@ -305,7 +162,7 @@ export default function UploadPage() {
         droppedFile.name.endsWith(".xls")
       ) {
         setFile(droppedFile)
-        processExcelFile(droppedFile)
+        processFileWithApi(droppedFile)
       }
     }
   }, [])
@@ -314,7 +171,7 @@ export default function UploadPage() {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0]
       setFile(selectedFile)
-      processExcelFile(selectedFile)
+      processFileWithApi(selectedFile)
     }
   }
 
