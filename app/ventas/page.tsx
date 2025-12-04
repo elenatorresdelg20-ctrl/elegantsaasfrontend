@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { KpiCard } from "@/components/kpi-card"
@@ -20,6 +21,7 @@ import {
   Award,
 } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
+import { SalesDashboardData, fetchSalesDashboard } from "@/lib/api"
 
 const revenueData = [
   { name: "Ene", actual: 1200000, forecast: 1150000 },
@@ -78,6 +80,21 @@ const pipelineData = [
   { name: "Cierre", value: 12, color: "#22c55e" },
 ]
 
+const defaultSalesData: SalesDashboardData = {
+  kpis: {
+    ingresosMes: { value: "$2.4M", change: 12.5 },
+    pipeline: { value: "$536K", change: 8.2 },
+    cierre: { value: "32%", change: 4.5 },
+    nuevosClientes: { value: "156", change: 15.2 },
+  },
+  revenueData,
+  topVendedores,
+  topCompradores,
+  topProductos,
+  forecastProductos,
+  pipelineData,
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -99,42 +116,68 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function VentasDashboard() {
+  const [data, setData] = useState<SalesDashboardData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const response = await fetchSalesDashboard()
+        setData(response)
+      } catch (err) {
+        console.error(err)
+        const message = err instanceof Error ? err.message : "No se pudieron cargar las métricas de ventas"
+        setError(message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  const salesData = data ?? defaultSalesData
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header title="Ventas" subtitle="Pipeline, rendimiento y pronósticos comerciales" />
         <main className="flex-1 overflow-y-auto p-8">
+          {isLoading && <p className="mb-4 text-sm text-muted-foreground">Cargando datos de ventas...</p>}
+          {error && !isLoading && <p className="mb-4 text-sm text-destructive">{error}</p>}
+
           {/* KPI Cards */}
           <div className="mb-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard
               title="Ingresos del Mes"
-              value="$2.4M"
-              change={12.5}
+              value={salesData.kpis.ingresosMes.value}
+              change={salesData.kpis.ingresosMes.change}
               changeLabel="vs mes anterior"
               icon={DollarSign}
               trend="up"
             />
             <KpiCard
               title="Deals en Pipeline"
-              value="$536K"
-              change={8.2}
+              value={salesData.kpis.pipeline.value}
+              change={salesData.kpis.pipeline.change}
               changeLabel="vs mes anterior"
               icon={Target}
               trend="up"
             />
             <KpiCard
               title="Tasa de Cierre"
-              value="32%"
-              change={4.5}
+              value={salesData.kpis.cierre.value}
+              change={salesData.kpis.cierre.change}
               changeLabel="vs mes anterior"
               icon={TrendingUp}
               trend="up"
             />
             <KpiCard
               title="Nuevos Clientes"
-              value="156"
-              change={15.2}
+              value={salesData.kpis.nuevosClientes.value}
+              change={salesData.kpis.nuevosClientes.change}
               changeLabel="vs mes anterior"
               icon={Users}
               trend="up"
@@ -150,7 +193,7 @@ export default function VentasDashboard() {
               <h2 className="text-xl font-semibold text-foreground">Top Vendedores</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-5">
-              {topVendedores.map((vendedor, index) => {
+              {salesData.topVendedores.map((vendedor, index) => {
                 const RankIcon = index === 0 ? Crown : index === 1 ? Medal : index === 2 ? Award : null
                 const rankColor =
                   index === 0 ? "#eab308" : index === 1 ? "#94a3b8" : index === 2 ? "#cd7c2f" : "#6b7280"
@@ -235,7 +278,7 @@ export default function VentasDashboard() {
                 <h2 className="text-lg font-semibold text-foreground">Top Compradores</h2>
               </div>
               <div className="space-y-4">
-                {topCompradores.map((comprador, index) => (
+                {salesData.topCompradores.map((comprador, index) => (
                   <div
                     key={comprador.empresa}
                     className="flex items-center gap-4 rounded-xl bg-secondary/20 p-4 transition-colors hover:bg-secondary/40"
@@ -278,7 +321,7 @@ export default function VentasDashboard() {
                 <h2 className="text-lg font-semibold text-foreground">Top Productos</h2>
               </div>
               <div className="space-y-4">
-                {topProductos.map((producto, index) => (
+                {salesData.topProductos.map((producto, index) => (
                   <div
                     key={producto.nombre}
                     className="flex items-center gap-4 rounded-xl bg-secondary/20 p-4 transition-colors hover:bg-secondary/40"
@@ -322,7 +365,7 @@ export default function VentasDashboard() {
               <span className="rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-medium text-yellow-500">IA</span>
             </div>
             <div className="grid gap-4 md:grid-cols-5">
-              {forecastProductos.map((producto) => (
+              {salesData.forecastProductos.map((producto) => (
                 <div key={producto.nombre} className="rounded-xl border border-border/50 bg-secondary/20 p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="truncate text-sm font-medium text-foreground">{producto.nombre}</h3>
@@ -386,7 +429,7 @@ export default function VentasDashboard() {
             </div>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart data={salesData.revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
@@ -446,7 +489,7 @@ export default function VentasDashboard() {
               <h2 className="text-lg font-semibold text-foreground">Pipeline por Etapa</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-5">
-              {pipelineData.map((item, index) => (
+              {salesData.pipelineData.map((item, index) => (
                 <div
                   key={item.name}
                   className="group relative overflow-hidden rounded-2xl border border-border/50 bg-secondary/20 p-6 text-center transition-all hover:bg-secondary/40"
@@ -454,7 +497,7 @@ export default function VentasDashboard() {
                   <div className="absolute inset-x-0 bottom-0 h-1" style={{ backgroundColor: item.color }} />
                   <p className="mb-2 text-4xl font-bold text-foreground">{item.value}</p>
                   <p className="text-sm text-muted-foreground">{item.name}</p>
-                  {index < pipelineData.length - 1 && (
+                  {index < salesData.pipelineData.length - 1 && (
                     <div className="absolute -right-3 top-1/2 hidden -translate-y-1/2 text-xl text-muted-foreground md:block">
                       →
                     </div>
