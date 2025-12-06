@@ -35,14 +35,6 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { ParrotMascot } from "@/components/parrot-mascot"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 const mainNavigation = [
   { name: "Vista General", href: "/", icon: LayoutDashboard },
@@ -113,30 +105,34 @@ export function Sidebar() {
       </div>
 
       {/* Workspace selector */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="mx-3 mt-4 flex w-[calc(100%-24px)] items-center justify-between rounded-lg bg-sidebar-accent px-3 py-2 text-left transition-colors hover:bg-sidebar-accent/80">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-sidebar-foreground">{currentWorkspace}</span>
-                <span className="text-xs text-muted-foreground">Gestión multidivisional</span>
-              </div>
+      <div className="mx-3 mt-4 space-y-2 rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-sidebar-foreground">{currentWorkspace}</span>
+              <span className="text-xs text-muted-foreground">Gestión multidivisional</span>
             </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[calc(100%-24px)]">
-          <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
-            Espacios de trabajo
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
+          </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Espacios de trabajo</p>
           {workspaces.map((workspace) => (
-            <DropdownMenuItem key={workspace.name} className="flex items-center gap-3">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+            <button
+              key={workspace.name}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors",
+                workspace.name === currentWorkspace
+                  ? "bg-primary/10 text-sidebar-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-foreground",
+              )}
+            >
+              <Building2 className="h-4 w-4" />
               <div className="flex flex-1 flex-col">
-                <span className="text-sm font-medium text-sidebar-foreground">{workspace.name}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-sm font-medium">{workspace.name}</span>
+                <span className="text-xs">
                   {workspace.plan} · {workspace.members} miembros
                 </span>
               </div>
@@ -146,18 +142,18 @@ export function Sidebar() {
                   Activo
                 </span>
               )}
-            </DropdownMenuItem>
+            </button>
           ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="flex items-center gap-3">
-            <Plus className="h-4 w-4 text-muted-foreground" />
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-sidebar-foreground">Crear nuevo workspace</span>
-              <span className="text-xs text-muted-foreground">Invita equipos y configura accesos</span>
-            </div>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </div>
+
+        <button className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70">
+          <Plus className="h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">Crear nuevo workspace</span>
+            <span className="text-xs text-muted-foreground">Invita equipos y configura accesos</span>
+          </div>
+        </button>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
@@ -333,39 +329,34 @@ export function Sidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-sidebar-border p-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
-                JD
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-sidebar-foreground">Juan Pérez</p>
-                <p className="text-xs text-muted-foreground">Administrador</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-3">
-              <User className="h-4 w-4 text-muted-foreground" />
-              Perfil y preferencias
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-3">
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-              Seguridad y acceso
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="gap-3 text-destructive">
-              <Link href="/login" className="flex w-full items-center gap-3">
-                <LogOut className="h-4 w-4" />
-                Cerrar sesión
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="space-y-3 border-t border-sidebar-border p-3">
+        <div className="flex w-full items-center gap-3 rounded-lg px-3 py-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
+            JD
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium text-sidebar-foreground">Juan Pérez</p>
+            <p className="text-xs text-muted-foreground">Administrador</p>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Cuenta</p>
+          <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground">
+            <User className="h-4 w-4" />
+            Perfil y preferencias
+          </button>
+          <button className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground">
+            <ShieldCheck className="h-4 w-4" />
+            Seguridad y acceso
+          </button>
+          <Link
+            href="/login"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-destructive transition-colors hover:bg-sidebar-accent"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </Link>
+        </div>
       </div>
     </aside>
   )
