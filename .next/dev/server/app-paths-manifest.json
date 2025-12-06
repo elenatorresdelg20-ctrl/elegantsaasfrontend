@@ -1,0 +1,12 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/ai-assistant/page": "app/ai-assistant/page.js",
+  "/almacen/page": "app/almacen/page.js",
+  "/analysis/page": "app/analysis/page.js",
+  "/cx/page": "app/cx/page.js",
+  "/marketing/page": "app/marketing/page.js",
+  "/notifications/page": "app/notifications/page.js",
+  "/page": "app/page.js",
+  "/upload/page": "app/upload/page.js",
+  "/ventas/page": "app/ventas/page.js"
+}

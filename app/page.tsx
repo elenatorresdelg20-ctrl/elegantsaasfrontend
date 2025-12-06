@@ -1,10 +1,16 @@
-import { Sidebar } from "@/components/sidebar"
-import { Header } from "@/components/header"
-import { KpiCard } from "@/components/kpi-card"
-import { ChartCard } from "@/components/chart-card"
-import { DataTable } from "@/components/data-table"
-import { ActivityFeed } from "@/components/activity-feed"
-import { HeartHandshake, Megaphone, DollarSign, TrendingUp } from "lucide-react"
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { Sidebar } from "@/components/sidebar";
+import { Header } from "@/components/header";
+import { KpiCard } from "@/components/kpi-card";
+import { ChartCard } from "@/components/chart-card";
+import { DataTable } from "@/components/data-table";
+import { ActivityFeed } from "@/components/activity-feed";
+import { HeartHandshake, Megaphone, DollarSign, TrendingUp } from "lucide-react";
+
+import { getPing } from "@/lib/api";
 
 const revenueData = [
   { name: "Ene", value: 1200000 },
@@ -19,7 +25,7 @@ const revenueData = [
   { name: "Oct", value: 1980000 },
   { name: "Nov", value: 2250000 },
   { name: "Dic", value: 2400000 },
-]
+];
 
 const satisfactionData = [
   { name: "Ene", value: 78 },
@@ -34,7 +40,7 @@ const satisfactionData = [
   { name: "Oct", value: 93 },
   { name: "Nov", value: 95 },
   { name: "Dic", value: 96 },
-]
+];
 
 const tableData = [
   { departamento: "CX", metrica: "NPS", valor: "72", cambio: "+5.2%", estado: "positivo" },
@@ -43,7 +49,7 @@ const tableData = [
   { departamento: "CX", metrica: "CSAT", valor: "4.6/5", cambio: "+0.2", estado: "positivo" },
   { departamento: "Marketing", metrica: "ROI Campañas", valor: "285%", cambio: "+18%", estado: "positivo" },
   { departamento: "Ventas", metrica: "Ticket Promedio", valor: "$1,250", cambio: "-3.1%", estado: "negativo" },
-]
+];
 
 const columns = [
   { key: "departamento", label: "Departamento" },
@@ -70,15 +76,36 @@ const columns = [
       </span>
     ),
   },
-]
+];
 
 export default function Dashboard() {
+  const [backendData, setBackendData] = useState<any | null>(null);
+  const [backendError, setBackendError] = useState("");
+
+  useEffect(() => {
+    getPing()
+      .then((res) => setBackendData(res))
+      .catch((err) => {
+        console.error(err);
+        setBackendError("No se pudo conectar con el backend");
+      });
+  }, []);
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header title="Vista General" subtitle="Resumen ejecutivo de todas las áreas" />
         <main className="flex-1 overflow-y-auto p-6">
+          {/* Bloque de estado del backend */}
+          <div className="mb-6 rounded-xl border bg-card p-4">
+            <h2 className="mb-2 text-sm font-semibold">Estado backend FastAPI</h2>
+            {backendError && <p className="mb-2 text-sm text-destructive">{backendError}</p>}
+            <pre className="max-h-32 overflow-auto rounded bg-muted p-2 text-xs">
+              {JSON.stringify(backendData, null, 2)}
+            </pre>
+          </div>
+
           {/* KPI Cards por área */}
           <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard
@@ -211,5 +238,6 @@ export default function Dashboard() {
         </main>
       </div>
     </div>
-  )
+  );
 }
+
