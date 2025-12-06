@@ -29,8 +29,20 @@ import {
   Plug,
   Upload,
   Presentation,
+  Check,
+  Plus,
+  User,
+  ShieldCheck,
 } from "lucide-react"
 import { ParrotMascot } from "@/components/parrot-mascot"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const mainNavigation = [
   { name: "Vista General", href: "/", icon: LayoutDashboard },
@@ -81,6 +93,12 @@ export function Sidebar() {
   const currentWorkspace = "Acme Corp"
   const pathname = usePathname()
 
+  const workspaces = [
+    { name: "Acme Corp", plan: "Enterprise", members: 34 },
+    { name: "Globex", plan: "Business", members: 18 },
+    { name: "Initech", plan: "Starter", members: 9 },
+  ]
+
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar">
       {/* Logo */}
@@ -95,13 +113,51 @@ export function Sidebar() {
       </div>
 
       {/* Workspace selector */}
-      <button className="mx-3 mt-4 flex items-center justify-between rounded-lg bg-sidebar-accent px-3 py-2 text-left transition-colors hover:bg-sidebar-accent/80">
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-sidebar-foreground">{currentWorkspace}</span>
-        </div>
-        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-      </button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="mx-3 mt-4 flex w-[calc(100%-24px)] items-center justify-between rounded-lg bg-sidebar-accent px-3 py-2 text-left transition-colors hover:bg-sidebar-accent/80">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-sidebar-foreground">{currentWorkspace}</span>
+                <span className="text-xs text-muted-foreground">Gestión multidivisional</span>
+              </div>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-[calc(100%-24px)]">
+          <DropdownMenuLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+            Espacios de trabajo
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {workspaces.map((workspace) => (
+            <DropdownMenuItem key={workspace.name} className="flex items-center gap-3">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-1 flex-col">
+                <span className="text-sm font-medium text-sidebar-foreground">{workspace.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {workspace.plan} · {workspace.members} miembros
+                </span>
+              </div>
+              {workspace.name === currentWorkspace && (
+                <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                  <Check className="h-3 w-3" />
+                  Activo
+                </span>
+              )}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="flex items-center gap-3">
+            <Plus className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-sidebar-foreground">Crear nuevo workspace</span>
+              <span className="text-xs text-muted-foreground">Invita equipos y configura accesos</span>
+            </div>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
@@ -278,18 +334,38 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
-            JD
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-sidebar-foreground">Juan Pérez</p>
-            <p className="text-xs text-muted-foreground">Administrador</p>
-          </div>
-          <Link href="/login" className="text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4" />
-          </Link>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-sidebar-accent">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary">
+                JD
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-medium text-sidebar-foreground">Juan Pérez</p>
+                <p className="text-xs text-muted-foreground">Administrador</p>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-3">
+              <User className="h-4 w-4 text-muted-foreground" />
+              Perfil y preferencias
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-3">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              Seguridad y acceso
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="gap-3 text-destructive">
+              <Link href="/login" className="flex w-full items-center gap-3">
+                <LogOut className="h-4 w-4" />
+                Cerrar sesión
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   )
