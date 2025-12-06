@@ -463,6 +463,11 @@ export default function UploadPage() {
     return generateChartsAndKpis(filteredRows, processedData.columns)
   }, [filteredRows, processedData])
 
+  const coveragePercent = useMemo(() => {
+    if (!processedData || processedData.rowCount === 0) return 0
+    return Math.round((filteredRows.length / processedData.rowCount) * 100)
+  }, [filteredRows.length, processedData])
+
   const filteredVendedores = useMemo(
     () =>
       processedData?.vendedores.filter((v) => v.toLowerCase().includes(searchVendedor.toLowerCase())) ?? [],
@@ -478,6 +483,27 @@ export default function UploadPage() {
     () => processedData?.tiendas.filter((t) => t.toLowerCase().includes(searchTienda.toLowerCase())) ?? [],
     [processedData?.tiendas, searchTienda],
   )
+
+  const toggleAllVendedores = useCallback(() => {
+    if (!processedData) return
+    const allVisible = filteredVendedores
+    const allSelected = allVisible.length > 0 && allVisible.every((v) => selectedVendedores.includes(v))
+    setSelectedVendedores(allSelected ? [] : allVisible)
+  }, [filteredVendedores, processedData, selectedVendedores])
+
+  const toggleAllClientes = useCallback(() => {
+    if (!processedData) return
+    const allVisible = filteredClientes
+    const allSelected = allVisible.length > 0 && allVisible.every((c) => selectedClientes.includes(c))
+    setSelectedClientes(allSelected ? [] : allVisible)
+  }, [filteredClientes, processedData, selectedClientes])
+
+  const toggleAllTiendas = useCallback(() => {
+    if (!processedData) return
+    const allVisible = filteredTiendas
+    const allSelected = allVisible.length > 0 && allVisible.every((t) => selectedTiendas.includes(t))
+    setSelectedTiendas(allSelected ? [] : allVisible)
+  }, [filteredTiendas, processedData, selectedTiendas])
 
   const vendorSubfilterClientes = useMemo(() => {
     if (!processedData) return []
@@ -611,6 +637,21 @@ export default function UploadPage() {
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4" align="start">
                   <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-3 rounded-md bg-muted/40 p-3 text-sm">
+                      <div className="space-y-1">
+                        <p className="font-semibold">Vista activa</p>
+                        <p className="text-xs text-muted-foreground">
+                          {filteredRows.length.toLocaleString()} de {processedData.rowCount.toLocaleString()} registros
+                        </p>
+                      </div>
+                      {totalFilters > 0 && (
+                        <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 px-3">
+                          <RotateCcw className="mr-2 h-3 w-3" />
+                          Limpiar
+                        </Button>
+                      )}
+                    </div>
+
                     {/* Vendedor Filter */}
                     {processedData.vendedores.length > 0 && (
                       <div className="space-y-3">
@@ -625,6 +666,14 @@ export default function UploadPage() {
                             onChange={(e) => setSearchVendedor(e.target.value)}
                             className="h-8 w-36 text-sm"
                           />
+                        </div>
+                        <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+                          <span>Coincidencias ({filteredVendedores.length})</span>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-[12px]" onClick={toggleAllVendedores}>
+                            {filteredVendedores.length > 0 && filteredVendedores.every((v) => selectedVendedores.includes(v))
+                              ? "Quitar todos"
+                              : "Seleccionar todos"}
+                          </Button>
                         </div>
                         <ScrollArea className="h-32">
                           <div className="space-y-2">
@@ -711,6 +760,14 @@ export default function UploadPage() {
                             className="h-8 w-36 text-sm"
                           />
                         </div>
+                        <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+                          <span>Coincidencias ({filteredClientes.length})</span>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-[12px]" onClick={toggleAllClientes}>
+                            {filteredClientes.length > 0 && filteredClientes.every((c) => selectedClientes.includes(c))
+                              ? "Quitar todos"
+                              : "Seleccionar todos"}
+                          </Button>
+                        </div>
                         <ScrollArea className="h-32">
                           <div className="space-y-2">
                             {filteredClientes.map((c) => (
@@ -795,6 +852,14 @@ export default function UploadPage() {
                             onChange={(e) => setSearchTienda(e.target.value)}
                             className="h-8 w-36 text-sm"
                           />
+                        </div>
+                        <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+                          <span>Coincidencias ({filteredTiendas.length})</span>
+                          <Button variant="ghost" size="sm" className="h-7 px-2 text-[12px]" onClick={toggleAllTiendas}>
+                            {filteredTiendas.length > 0 && filteredTiendas.every((t) => selectedTiendas.includes(t))
+                              ? "Quitar todos"
+                              : "Seleccionar todos"}
+                          </Button>
                         </div>
                         <ScrollArea className="h-32">
                           <div className="space-y-2">
@@ -883,6 +948,14 @@ export default function UploadPage() {
               <span className="text-sm text-muted-foreground">
                 {filteredRows.length.toLocaleString()} registros filtrados
               </span>
+
+              <div className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/50 px-3 py-2 text-sm">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <div className="leading-tight">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Cobertura</p>
+                  <p className="font-semibold">{coveragePercent}%</p>
+                </div>
+              </div>
 
               <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -1027,9 +1100,17 @@ export default function UploadPage() {
             </div>
 
             {filteredRows.length === 0 && (
-              <div className="mb-6 rounded-lg border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-                No hay datos que coincidan con los filtros seleccionados. Ajusta los filtros o limpia todo para volver a ver
-                el tablero completo.
+              <div className="mb-6 flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                <div>
+                  <p className="font-medium text-foreground">No hay datos con estos filtros</p>
+                  <p className="text-muted-foreground">
+                    Ajusta los filtros o límpialos para recuperar el tablero completo.
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={clearAllFilters}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Limpiar filtros
+                </Button>
               </div>
             )}
 
