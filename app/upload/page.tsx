@@ -417,6 +417,10 @@ export default function UploadPage() {
     setSelectedTiendas([])
     setFechaInicio(undefined)
     setFechaFin(undefined)
+    setSearchVendedor("")
+    setSearchCliente("")
+    setSearchTienda("")
+    setFiltersOpen(false)
   }
 
   const filteredRows = useMemo(() => {
@@ -466,7 +470,7 @@ export default function UploadPage() {
   const coveragePercent = useMemo(() => {
     if (!processedData || processedData.rowCount === 0) return 0
     return Math.round((filteredRows.length / processedData.rowCount) * 100)
-  }, [filteredRows.length, processedData])
+  }, [filteredRows, processedData])
 
   const filteredVendedores = useMemo(
     () =>
